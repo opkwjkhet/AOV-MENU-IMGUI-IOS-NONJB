@@ -1,15 +1,30 @@
 #ifndef dobby_h
 #define dobby_h
+
 #if 0
 #define DobbyBuildVersion c343f74888dffad84d9ad08d9c433456
 #define DobbyHook c8dc3ffa44f22dbd10ccae213dd8b1f8
 #define DobbyInstrument b71e27bca2c362de90c1034f19d839f9
 #endif
+
+// ย้าย #include มาไว้ข้างนอกสุด ตรงนี้ (ก่อนจะเข้า extern "C")
+#include <stdbool.h>
+#include <stdint.h>
+
+#ifdef __OBJC__
+#import <Foundation/Foundation.h>
+#else
+// กำหนดเผื่อกรณีถูกเรียกใช้งานจากไฟล์ C++ ธรรมดาที่ไม่มี Objective-C
+#ifndef BOOL
+typedef bool BOOL;
+#endif
+#forward_class NSString;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <stdbool.h>
-#include <stdint.h>
+
 void log_set_level(int level);
 void log_switch_to_syslog();
 void log_switch_to_file(const char *path);
@@ -145,9 +160,11 @@ void dobby_disable_near_branch_trampoline();
 #endif
 typedef void (*linker_load_callback_t)(const char *image_name, void *handle);
 void dobby_register_image_load_callback(linker_load_callback_t func);
+
 #ifdef __cplusplus
 }
 #endif
+
 typedef struct {
   uint64_t hook_vaddr;
   uint64_t hook_size;
@@ -161,13 +178,22 @@ typedef struct {
   void *target_replace;
   void *instrument_handler;
 } StaticInlineHookBlock;
+
 int dobby_create_instrument_bridge(void *targetData);
 bool dobby_static_inline_hook(StaticInlineHookBlock *hookBlock, StaticInlineHookBlock *hookBlockRVA, uint64_t funcRVA,
                               void *funcData, uint64_t targetRVA, void *targetData, uint64_t InstrumentBridgeRVA,
                               void *patchBytes, int patchSize);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 BOOL ActiveCodePatch(char* machoPath, uint64_t vaddr, char* patch);
 BOOL DeactiveCodePatch(char* machoPath, uint64_t vaddr, char* patch);
 NSString* Hello(char* machoPath, uint64_t vaddr, char* patch);
 void* StaticInlineHookFunction(char* machoPath, uint64_t vaddr, void* replace);
 BOOL StaticInlineHookInstrument(char* machoPath, uint64_t vaddr, void(*callback)(RegisterContext*));
+#ifdef __cplusplus
+}
+#endif
+
 #endif
